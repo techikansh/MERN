@@ -29,7 +29,7 @@ const Navbar = () => {
   return (
     <div className='bg-white flex items-center justify-between px-6 py-2 drop-shadow gap-1 flex-wrap'>
         
-        <h2 className='text-2xl font-medium text-black py-2'>Notes</h2>
+        <h2 className='text-2xl font-medium text-black py-2 hover:cursor-pointer' onClick={ () => navigate("/dashboard")}>Notes</h2>
 
         <SearchBar 
           value={searchQuery}
