@@ -1,6 +1,6 @@
-import jwt from "jsonwebtoken";
+const jwt = require("jsonwebtoken");
 
-export function authenticateToken (req, res, next) {
+function authenticateToken(req, res, next) {
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1];
 
@@ -10,11 +10,7 @@ export function authenticateToken (req, res, next) {
         if (err) res.sendStatus(401);
         req.user = user;
         next();
-    })
+    });
 }
 
-// line 5 explanation
-// if authHeader is "Bearer abcdef123456", 
-// authHeader.split(" ")[1] will be "abcdef123456"
-
-
+module.exports = {authenticateToken};

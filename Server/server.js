@@ -1,104 +1,99 @@
-import express from "express";
-import cors from "cors";
-import { authenticateToken } from "./utlities.js";
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-import User from "./models/user.model.js";
-import mongoose from "mongoose";
+require("dotenv").config();
 
-dotenv.config();
+const express = require("express");
+const cors = require("cors");
+const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
+const authenticateToken = require("./utlities");
+const User = require("./models/user.model");
+
 const app = express();
 
-app.use(express.json());
 app.use(
   cors({
     origin: "*",
   })
 );
 
+app.use(express.json());
+
 app.get("/", (req, res) => {
-  res.send({ data: "Hello World!" });
+  res.send("Hello World");
 });
 
-app.post("/register", async (req, res) => {
-  
-  const { fullname, email, password } = req.body;
-  const isUser = await User.findOne({ email: email });
-  
-  if (isUser) {
-    res.json({
-      error: true,
-      message: "User already exists!",
-    });
-  } 
-  else {
-    const user = new User({
-      fullname,
-      email,
-      password,
-    });
-    console.log("user not saved yet!")
-    await user.save();
-    console.log("user saved!")
+app.post("/create-user", async (req, res) => {
 
-    const accesToken = jwt.sign({ user }, process.env.ACCESS_TOKEN_SECRET, {
-      expiresIn: "36000m",
-    });
-
-    return res.json({
-      error: false,
-      user,
-      accesToken,
-      message: "Registeration Successful!",
-    });
+  const { fullName, email, password } = req.body;
+  
+  if (!fullName) {
+    res.status(400).json({ error: true, message: "Full Name is required :)" });
   }
-});
+  if (!email) {
+    res.status(400).json({ error: true, message: "Email is required :)" });
+  }
+  if (!password) {
+    res.status(400).json({ error: true, message: "Password is required :)" });
+  }
 
-app.post ("/login", async (req, res) => {
+  const isUser = await User.findOne({ email });
+  if (isUser) {
+    res.status(400).json({ error: true, message: "User already exists :(" });
+  }
 
-    const {email, password} = req.body;
-    const userInfo = await User.findOne({email: email});
+  const newUser = new User({ fullName, email, password });
+  await newUser.save();
 
-    if (!userInfo) {
-        res.status(400).json({
-            error: true,
-            message: "User not found!"
-        });
-    }
-
-    // If userInfo found, then compare email and password
-    if (userInfo.password === password) {
-        const user = {user: userInfo}
-        const accesToken = jwt.sign({user}, process.env.ACCESS_TOKEN_SECRET, {expiresIn: "36000m"});
-
-        return res.json({
-            error: false,
-            message: "Login successful!",
-            email,
-            accesToken
-        })
-    }
-    else {
-        return res.status(400).json({
-            error: true,
-            message: "Invalid Credentials!",
-            email
-        })
-    }
-
-})
-
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("Connected to MongoDB");
-    app.listen(8000, () => {
-      console.log("Server is running...");
-    });
-  })
-  .catch((err) => {
-    console.log(process.env.MONGO_URI);
-    console.error("Could not connect to MongoDB", err);
+  const newToken = jwt.sign({ newUser }, process.env.ACCESS_TOKEN_SECRET, {
+    expiresIn: "30m",
   });
 
-export default app;
+  res.status(201).json({
+    error: false,
+    newToken,
+    newUser,
+    message: "Registered successfully :)",
+  });
+});
+
+
+app.post("/login", async (req, res) => {
+
+    const { email, password } = req.body;
+    
+    if (!email) {
+      res.status(400).json({ error: true, message: "Email is required :)" });
+    }
+    if (!password) {
+      res.status(400).json({ error: true, message: "Password is required :)" });
+    }
+  
+    const isUser = await User.findOne({ email });
+    if (!isUser) {
+      res.status(400).json({ error: true, message: "Invalid Credentials :(" });
+    }
+    else {
+        console.log(isUser);
+        const newToken = jwt.sign({ isUser }, process.env.ACCESS_TOKEN_SECRET, {
+          expiresIn: "30m",
+        });
+      
+        res.status(201).json({
+          error: false,
+          newToken,
+          email,
+          message: "Login successful :)",
+        });
+    }
+  });
+
+
+
+try {
+  mongoose.connect(process.env.MONGO_URI);
+  app.listen(process.env.PORT || 8000);
+  console.log(`Server running on port ${process.env.PORT}`);
+} catch (error) {
+  console.log(error);
+}
+
+module.exports = app;
