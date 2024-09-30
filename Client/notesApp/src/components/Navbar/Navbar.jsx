@@ -3,27 +3,43 @@ import React, { useState } from 'react'
 import ProfileInfo from '../ProfileInfo/ProfileInfo'
 import { useNavigate } from 'react-router-dom'
 import SearchBar from '../SearchBar/SearchBar'
+import axiosInstance from '../../utils/axiosInstance'
 
-const Navbar = () => {
+const Navbar = ({userInfo, setAllNotes, getAllNotes}) => {
+
 
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
   const onLogout = () => {
     navigate("/login")
+    localStorage.clear();
   }
 
   const onChange = (e) => {
     setSearchQuery(e.target.value);
   }
 
-  const handleSearch = () => {
-    console.log("handing Search...");
+  const handleSearch = async () => {
+    
+    try {
+        const response = await axiosInstance.get(`/notes/search-notes?query=${searchQuery}`);
+        console.log(response);
+        if (response.data.error) {
+          console.log(response.data.message)
+        } else {
+          setAllNotes(response.data.notes)
+        }
+    } catch (error) {
+      console.log(error)
+    }
+    
     
   }
 
   const onClearSearch = () => {
     setSearchQuery("");
+    getAllNotes();
   }
 
   return (
@@ -38,7 +54,7 @@ const Navbar = () => {
           onClearSearch={onClearSearch}
         />
 
-        <ProfileInfo onLogout = {onLogout}/>
+        <ProfileInfo onLogout = {onLogout} userInfo={userInfo}/>
     </div>
   )
 }

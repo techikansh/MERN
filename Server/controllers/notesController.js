@@ -119,4 +119,53 @@ async function deleteNote (req, res) {
     }
 }
 
-module.exports = { addNote, editNote, getAllNotes, getNoteById, deleteNote };
+async function searchNotes (req, res) {
+    const {isUser} = req.user;
+    const { query } = req.query;
+
+    console.log(query);
+
+    if (!query) {
+        return res.status(400).json({error: true, message: "Search query is required :("});
+    }
+
+    try {
+        const notes = await Note.find({
+            userId: isUser._id,
+            $or: [
+                {title: {$regex: new RegExp(query, "i")}},
+                {content: {$regex: new RegExp(query, "i")}}
+            ],
+        })
+
+        return res.json({error: false, notes, message: "Notes retrieved successfully :)"});
+    } catch (exception) {
+        console.log(exception);
+        return res.status(500).json({error: true, message: "Internal Server Error :("});
+    }
+}
+
+async function pinNote(req, res) {
+  const {isUser} = req.user;
+  const noteId = req.params.noteId;
+
+  try {
+    const note = await Note.findOne({_id: noteId, userId: isUser._id});
+    if (!note) {
+      return res.status(404).json({error: true, message: "Note not found :("});
+    }
+
+    note.isPinned = !note.isPinned;
+    await note.save();
+    return res.json({
+      error: false, 
+      note,
+      message: note.isPinned ? "Note pinned successfully :)" : "Note unpinned successfully :)"
+    })
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({error: true, message: "Internal Server Error :("});
+  }
+}
+
+module.exports = { addNote, editNote, getAllNotes, getNoteById, deleteNote, searchNotes, pinNote };

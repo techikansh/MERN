@@ -1,23 +1,60 @@
 import React, { useState } from "react";
 import Modal from "react-modal";
 import { MdDelete, MdCancel } from "react-icons/md";
+import axiosInstance from "../../utils/axiosInstance";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-const AddEditNotes = ({ type, data, handleClose }) => {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+
+const AddEditNotes = ({ type, noteData, handleClose, getAllNotes }) => {
+  const [title, setTitle] = useState(noteData?.title || "");
+  const [content, setContent] = useState(noteData?.content || "");
   const [error, setError] = useState("");
 
-  const editNote = async () => {};
-  const addNewNote = async () => {};
+  const editNote = async () => {
+    try {
+        const response = await axiosInstance.put(`/notes/edit-note/${noteData._id}`, {
+          title, content
+        })
+
+        if (response.data && response.data.note) {
+          getAllNotes();
+          handleClose();
+          toast.success(response.data.message || "Note edited successfully");
+        }
+        else {
+          setError(response.data.message);
+        }
+    } catch (error) {
+      if (error.response && error.response.data.message) {
+        setError(error.response.data.message);
+      }
+    }
+  };
+  const addNewNote = async () => {
+    try {
+      const response = await axiosInstance.post ("/notes/add-note", {
+        title, content
+      });
+      if (response.data && response.data.newNote) {
+        getAllNotes();
+        handleClose();
+        toast.success(response.data.message || "Note added successfully");
+      }
+    } catch (error) {
+      if (error.response && error.response.data.message) {
+        setError(error.response.data.message);
+      }
+    }
+  };
 
   const handleNotes = () => {
-    
     if (title == "") {
-      setError("Title can't be empty*");
+      setError("Title can't be empty!");
       return;
     }
     if (content == "") {
-      setError("Content can't be empty*");
+      setError("Content can't be empty!");
       return;
     }
     setError("");
@@ -63,10 +100,6 @@ const AddEditNotes = ({ type, data, handleClose }) => {
         />
       </div>
 
-      {/* To Do: Add Tags Func Later... */}
-      {/* <div className="mt-3">
-            <label htmlFor="">Tags</label>
-        </div> */}
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
@@ -76,6 +109,7 @@ const AddEditNotes = ({ type, data, handleClose }) => {
       >
         Add
       </button>
+
     </div>
   );
 };

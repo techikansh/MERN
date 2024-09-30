@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import Navbar from "../../components/Navbar/Navbar";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa6";
+import axiosInstance from "../../utils/axiosInstance";
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -10,7 +11,9 @@ const Signup = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleLogin = (e) => {
+  const navigate = useNavigate();
+
+  const handleLogin = async (e) => {
     e.preventDefault();
     console.log(name);
     console.log(email);
@@ -21,6 +24,34 @@ const Signup = () => {
     }
 
     // rest of the signUp logic
+    try {
+      const response = await axiosInstance.post("/auth/create-user", {
+        fullName: name,
+        email,
+        password,
+      });
+      console.log(response);
+
+      if (response.data && response.data.error) { 
+        setError(response.data.message);
+        return;
+      }
+
+      if (response.data && response.data.newToken) {
+        localStorage.setItem("token", response.data.newToken);
+        // navigate("/login");
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      if (error.response && error.response.data && error.response.data.message) {
+        setError(error.response.data.message);
+        return;
+      }
+      else {
+        setError("Something went wrong!!");
+      }
+
+    }
   };
 
   const eyeIcon = () => {
@@ -92,7 +123,9 @@ const Signup = () => {
               Create Account
             </button>
 
-            <p className="text-center text-sm mt-4"> Already a Customer?{" "}
+            <p className="text-center text-sm mt-4">
+              {" "}
+              Already a Customer?{" "}
               <Link
                 to={"/login"}
                 className="underline font-medium text-primary"

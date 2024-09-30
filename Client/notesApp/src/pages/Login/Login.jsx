@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import Navbar from '../../components/Navbar/Navbar'
-import {Link} from 'react-router-dom';
+import {Link, Navigate, useNavigate} from 'react-router-dom';
 import {FaRegEye, FaRegEyeSlash} from "react-icons/fa6"
+import axiosInstance from '../../utils/axiosInstance';
 
 const Login = () => {
 
@@ -10,7 +11,9 @@ const Login = () => {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("")
 
-    const handleLogin = (e) => {
+    const navigate = useNavigate();
+
+    const handleLogin = async (e) => {
         e.preventDefault();
         console.log(email);
         console.log(password);
@@ -18,6 +21,23 @@ const Login = () => {
         if (email === "" || password === "") {setError("Email & Password can't be empty!!")}
 
         // rest of the login logic 
+        try {
+            const response = await axiosInstance.post("/auth/login", {email, password});
+            console.log(response);
+
+            if (response.data && response.data.newToken ){
+                localStorage.setItem("token", response.data.newToken);
+                navigate("/dashboard");
+            }
+
+        } catch (error) {
+            if (error.response && error.response.data && error.response.data.message) {
+                setError(error.response.data.message);
+            }
+            else {
+                setError("Something went wrong!!");
+            }
+        }
     }
     
     const eyeIcon = () => {

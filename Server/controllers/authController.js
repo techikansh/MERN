@@ -5,28 +5,30 @@ const register = async (req, res) => {
   const { fullName, email, password } = req.body;
 
   if (!fullName) {
-    res.status(400).json({ error: true, message: "Full Name is required :)" });
+    return res.status(400).json({ error: true, message: "Full Name is required :)" });
   }
   if (!email) {
-    res.status(400).json({ error: true, message: "Email is required :)" });
+    return res.status(400).json({ error: true, message: "Email is required :)" });
   }
   if (!password) {
-    res.status(400).json({ error: true, message: "Password is required :)" });
+    return res.status(400).json({ error: true, message: "Password is required :)" });
   }
 
   const isUser = await User.findOne({ email });
   if (isUser) {
-    res.status(400).json({ error: true, message: "User already exists :(" });
+    return res.status(400).json({ error: true, message: "User already exists :(" });
   }
 
   const newUser = new User({ fullName, email, password });
   await newUser.save();
 
-  const newToken = jwt.sign({ newUser }, process.env.ACCESS_TOKEN_SECRET, {
+  console.log("newUser", newUser);
+
+  const newToken = jwt.sign({ isUser: newUser }, process.env.ACCESS_TOKEN_SECRET, {
     expiresIn: "30m",
   });
 
-  res.status(201).json({
+  return res.status(201).json({
     error: false,
     newToken,
     newUser,
@@ -38,25 +40,27 @@ async function login(req, res) {
   const { email, password } = req.body;
 
   if (!email) {
-    res.status(400).json({ error: true, message: "Email is required :)" });
+     return res.status(400).json({ error: true, message: "Email is required :)" });
   }
   if (!password) {
-    res.status(400).json({ error: true, message: "Password is required :)" });
+     return res.status(400).json({ error: true, message: "Password is required :)" });
   }
 
   const isUser = await User.findOne({ email });
   if (!isUser) {
-    res.status(400).json({ error: true, message: "User doesn't exist :(" });
+     return res.status(400).json({ error: true, message: "User doesn't exist :(" });
   } else {
     if (isUser.password !== password) {
-      res.status(400).json({ error: true, message: "Invalid Credentials :(" });
+       return res.status(400).json({ error: true, message: "Invalid Credentials :(" });
     }
 
-    const newToken = jwt.sign({ isUser }, process.env.ACCESS_TOKEN_SECRET, {
+    console.log("isUser", isUser);
+
+    const newToken = jwt.sign({ isUser: isUser }, process.env.ACCESS_TOKEN_SECRET, {
       expiresIn: "30m",
     });
 
-    res.status(201).json({
+     return res.status(201).json({
       error: false,
       newToken,
       email,
@@ -65,4 +69,24 @@ async function login(req, res) {
   }
 }
 
-module.exports = { register, login };
+async function getUser (req, res) {
+  const { isUser } = req.user;
+  const fetchedUser = await User.findById(isUser._id);
+  
+  if (!fetchedUser) {
+    return res.status(400).json({error: true, message: "User doesn't exist :("})
+  }
+
+  console.log(fetchedUser);
+
+  const user = ({
+    fullName: fetchedUser.fullName,
+    email: fetchedUser.email,
+    _id: fetchedUser._id,
+    createdOn: fetchedUser.createdOn
+  });
+  
+  return res.status(200).json({error: false, user});
+}
+
+module.exports = { register, login, getUser };
