@@ -1,7 +1,4 @@
-- Only Frontend is ready as of now!
-- Ein kleines Blick :)
+Notes App - Frontend & Backend
 
-  
-
-https://github.com/user-attachments/assets/ad23c073-a450-4b27-ab10-ce774ca24f1e
+https://github.com/user-attachments/assets/ef1a3479-733b-4b44-a0cf-36a4347c99c0
 
